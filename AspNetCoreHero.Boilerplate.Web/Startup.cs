@@ -9,19 +9,19 @@ using AspNetCoreHero.ToastNotification.Extensions;
 using AutoMapper;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Quartz;
+using OpenIddict.Validation.AspNetCore;
 using System.Reflection;
-using static OpenIddict.Abstractions.OpenIddictConstants;
+using System.Threading.Tasks;
 
 namespace AspNetCoreHero.Boilerplate.Web
 {
@@ -51,15 +51,25 @@ namespace AspNetCoreHero.Boilerplate.Web
             services.AddRepositories();
             services.AddSharedInfrastructure(_configuration);
             services.AddMultiLingualSupport();
+            services.AddRazorPages();
 
-            services.AddOpenIdDictAuthenticationScheme(_configuration); //dano
 
-            services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-            .AddCookie(options =>
+            //services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+                options.DefaultForbidScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+
+            })
+           .AddCookie(options =>
             {
                 options.LoginPath = "/Account/Login";
 
-            }); //dano added it here
+            });
+           
+            services.AddOpenIdDictAuthenticationScheme(_configuration); 
+
 
             services.AddControllersWithViews().AddFluentValidation(fv =>
             {
@@ -93,7 +103,9 @@ namespace AspNetCoreHero.Boilerplate.Web
             app.UseStaticFiles();
             app.UseCookiePolicy();
             app.UseMultiLingualFeature();
+           
             app.UseRouting();
+           
             app.UseAuthentication();
             app.UseAuthorization();
             

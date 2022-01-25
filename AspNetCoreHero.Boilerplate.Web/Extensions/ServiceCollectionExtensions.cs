@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using static OpenIddict.Abstractions.OpenIddictConstants;
+using static OpenIddict.Server.OpenIddictServerEvents;
 
 namespace AspNetCoreHero.Boilerplate.Web.Extensions
 {
@@ -110,7 +111,7 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
         public static void AddOpenIdDictAuthenticationScheme(this IServiceCollection services, IConfiguration configuration)
         {
             //dano
-            services.AddRazorPages();
+            
 
             services.AddDbContext<IdentityContext>(options =>
             {
@@ -121,7 +122,13 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
                 // Note: use the generic overload if you need
                 // to replace the default OpenIddict entities.
                 options.UseOpenIddict();
+
+               
             });
+
+
+            
+
 
             services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -169,7 +176,6 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
             //.AddNegotiate();
 
             
-
             services.AddOpenIddict()
 
                 // Register the OpenIddict core components.
@@ -183,7 +189,6 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
                     // Enable Quartz.NET integration.
                     options.UseQuartz();
 
-
                 })
 
                 // Register the OpenIddict server components.
@@ -196,15 +201,17 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
                            .SetUserinfoEndpointUris("/connect/userinfo");
 
                     // Mark the "email", "profile" and "roles" scopes as supported scopes.
-                    options.RegisterScopes(Scopes.Email, Scopes.Profile, Scopes.Roles);
+                    options.RegisterScopes(Scopes.Email, Scopes.Profile, Scopes.Roles, Scopes.OpenId);
 
                     // Note: this sample only uses the authorization code flow but you can enable
                     // the other flows if you need to support implicit, password or client credentials.
-                    //options.AllowAuthorizationCodeFlow(); dano commented this
 
-                    options.AllowAuthorizationCodeFlow()                   
+                    options.AllowAuthorizationCodeFlow()
+                   //.RequireProofKeyForCodeExchange()
                    .AllowHybridFlow()
-                   .AllowRefreshTokenFlow();//added by dano
+                   .AllowRefreshTokenFlow()
+                   .AllowClientCredentialsFlow()
+                   .AllowImplicitFlow();
 
                     // Register the signing and encryption credentials.
                     options.AddDevelopmentEncryptionCertificate()
@@ -219,6 +226,24 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
                            .EnableStatusCodePagesIntegration();
 
                     options.DisableAccessTokenEncryption();
+
+
+
+                    //options.AddEventHandler<ValidateTokenRequestContext>(builder =>
+                    //    builder.UseInlineHandler(context =>
+                    //    {
+                    //        if (!string.Equals(context.ClientId, "console_app", StringComparison.Ordinal))
+                    //        {
+                    //            context.Reject(
+                    //                error: Errors.InvalidClient,
+                    //                description: "The specified 'client_id' doesn't match a registered application.");
+                    //            return default;
+                    //        }
+                    //        // This demo is used by a single public client application.
+                    //        // As such, no client secret validation is performed.
+                    //        return default;
+                    //    }));
+
                 })
 
                 // Register the OpenIddict validation components.
@@ -229,7 +254,8 @@ namespace AspNetCoreHero.Boilerplate.Web.Extensions
 
                     // Register the ASP.NET Core host.
                     options.UseAspNetCore();
-                });
+                })          
+                ;
 
             // Register the worker responsible of seeding the database with the sample clients.
             // Note: in a real world application, this step should be part of a setup script.
